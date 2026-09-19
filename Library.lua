@@ -1,7 +1,7 @@
 --[[
 
     Milenium Library
-    -> Made by @finobe 
+    -> Made by @finobe and fixed. by repo yuuhfrankiefrank
     -> Kind of got bored idk what to do with life
     -> Idk who or why this got leaked, ui was VERY popular and high in demand with customers
 ]]
@@ -83,7 +83,7 @@
 
     local themes = {
         preset = {
-            accent = rgb(155, 150, 219),
+            accent = rgb(83, 150, 255),
         }, 
 
         utility = {
