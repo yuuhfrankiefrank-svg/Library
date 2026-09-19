@@ -5,7 +5,7 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/yuuhf
   There is alot of customisability with this library which made it very high in demand.
   Also I haven't even got a clue how this got leaked since loads of people had it.
 
-  Mobile + PC supported (drag, resize, UI scale).
+  Anyway. this is also mobile and pc supported cus is fixed :)
 ]]
 local window = library:window({name = "nebula", suffix = "tech", gameInfo = "Milenium for Counter-Strike: Global Offensive"})
 window:seperator({name = "General"})
