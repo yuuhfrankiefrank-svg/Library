@@ -84,7 +84,7 @@
 
     local themes = {
         preset = {
-            accent = rgb(255,0,0),
+            accent = rgb(155, 150, 219),
         }, 
 
         utility = {
@@ -905,7 +905,7 @@
                 TextSize = btn_text;
                 AutoButtonColor = false;
                 Size = dim2(0, btn_w, 0, btn_h);
-                Position = dim2(0, 12, 0, 12);
+                Position = dim2(0, 12, 0, 90);
                 BackgroundColor3 = rgb(22, 22, 24);
                 BorderSizePixel = 0;
                 Active = true;
