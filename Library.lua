@@ -83,7 +83,7 @@
 
     local themes = {
         preset = {
-            accent = rgb(193, 34, 34),
+            accent = rgb(155, 150, 219),
         }, 
 
         utility = {
@@ -888,14 +888,19 @@
 
             library:apply_ui_scale(toggle_gui)
 
+            local is_mob = library:is_mobile()
+            local btn_w = is_mob and 150 or 120
+            local btn_h = is_mob and 44 or 36
+            local btn_text = is_mob and 18 or 16
+
             local toggle_btn = library:create("TextButton", {
                 Parent = toggle_gui;
                 FontFace = fonts.font;
                 Text = "Hide Ui";
                 TextColor3 = rgb(245, 245, 245);
-                TextSize = 14;
+                TextSize = btn_text;
                 AutoButtonColor = false;
-                Size = dim2(0, 90, 0, 28);
+                Size = dim2(0, btn_w, 0, btn_h);
                 Position = dim2(0, 12, 0, 12);
                 BackgroundColor3 = rgb(22, 22, 24);
                 BorderSizePixel = 0;
@@ -904,7 +909,7 @@
 
             library:create("UICorner", {
                 Parent = toggle_btn;
-                CornerRadius = dim(0, 2);
+                CornerRadius = dim(0, 5);
             })
 
             local toggle_stroke = library:create("UIStroke", {
