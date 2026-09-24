@@ -78,7 +78,8 @@
         config_flags = {},
         connections = {},   
         notifications = {notifs = {}},
-        current_open; 
+        current_open = nil,
+        cache = nil,
     }
 
     local themes = {
@@ -656,11 +657,14 @@
                 IgnoreGuiInset = true;
             }); 
 
-            -- Apply responsive UIScale for mobile + PC
+            library.cache = library:create("Folder", {
+                Parent = library["items"];
+                Name = "cache";
+            })
+
             library:apply_ui_scale(library[ "items" ])
             library:apply_ui_scale(library[ "other" ])
 
-            -- Keep scale updated on viewport changes (orientation / window resize)
             library:connection(camera:GetPropertyChangedSignal("ViewportSize"), function()
                 library:apply_ui_scale(library[ "items" ])
                 library:apply_ui_scale(library[ "other" ])
