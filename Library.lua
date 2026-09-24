@@ -1,7 +1,7 @@
 --[[
 
     Milenium Library
-    -> Made by @finobe and fixed. by repo yuuhfrankiefrank
+    -> Made by @finobe 
     -> Kind of got bored idk what to do with life
     -> Idk who or why this got leaked, ui was VERY popular and high in demand with customers
 ]]
@@ -91,7 +91,8 @@
                 BackgroundColor3 = {}, 	
                 TextColor3 = {}, 
                 ImageColor3 = {}, 
-                ScrollBarImageColor3 = {} 
+                ScrollBarImageColor3 = {},
+                Color = {},
             },
         }
     }
@@ -870,24 +871,60 @@
                 }); library:apply_theme(items[ "other_info" ], "accent", "TextColor3");        
             end 
 
-            do -- Other
+            do
                 library:draggify(items[ "main" ])
                 library:resizify(items[ "main" ])
             end 
 
-            function cfg.toggle_menu(bool) 
-                -- WIP 
-                -- if cfg.tween then 
-                --     cfg.tween:Cancel()
-                -- end 
+            local ui_visible = true
 
-                -- items[ "main" ].Size = dim2(items[ "main" ].Size.Scale.X, items[ "main" ].Size.Offset.X - 20, items[ "main" ].Size.Scale.Y, items[ "main" ].Size.Offset.Y - 20)
-                -- library:tween(items[ "tab_holder" ], {Size = dim2(1, -196, 1, -81)}, Enum.EasingStyle.Quad, 0.4)
-                -- cfg.tween = 
-                
-                library[ "items" ].Enabled = bool
-            end 
-                
+            local toggle_gui = library:create("ScreenGui", {
+                Parent = coregui;
+                Name = "\0";
+                Enabled = true;
+                ZIndexBehavior = Enum.ZIndexBehavior.Global;
+                IgnoreGuiInset = true;
+            })
+
+            library:apply_ui_scale(toggle_gui)
+
+            local toggle_btn = library:create("TextButton", {
+                Parent = toggle_gui;
+                FontFace = fonts.font;
+                Text = "Hide Ui";
+                TextColor3 = rgb(245, 245, 245);
+                TextSize = 14;
+                AutoButtonColor = false;
+                Size = dim2(0, 90, 0, 28);
+                Position = dim2(0, 12, 0, 12);
+                BackgroundColor3 = rgb(22, 22, 24);
+                BorderSizePixel = 0;
+                Active = true;
+            })
+
+            library:create("UICorner", {
+                Parent = toggle_btn;
+                CornerRadius = dim(0, 2);
+            })
+
+            local toggle_stroke = library:create("UIStroke", {
+                Parent = toggle_btn;
+                Color = themes.preset.accent;
+                Thickness = 1;
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+            })
+            library:apply_theme(toggle_stroke, "accent", "Color")
+
+            function cfg.toggle_menu(bool)
+                ui_visible = bool
+                items["main"].Visible = bool
+                toggle_btn.Text = bool and "Hide Ui" or "Show Ui"
+            end
+
+            toggle_btn.MouseButton1Click:Connect(function()
+                cfg.toggle_menu(not ui_visible)
+            end)
+
             return setmetatable(cfg, library)
         end 
 
