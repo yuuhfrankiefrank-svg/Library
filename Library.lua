@@ -84,7 +84,7 @@
 
     local themes = {
         preset = {
-            accent = rgb(255,0,0),
+            accent = rgb(155, 150, 219),
         }, 
 
         utility = {
@@ -495,18 +495,68 @@
         end
 
         local config_holder;
+
+        local function config_basename(path)
+            if type(path) ~= "string" then return nil end
+            local name = path:gsub("\\", "/")
+            name = name:match("([^/]+)$") or name
+            name = name:gsub("%.cfg$", ""):gsub("%.json$", "")
+            if name == "" or name == "." or name == ".." then return nil end
+            return name
+        end
+
+        local function config_path(name)
+            if type(name) ~= "string" or name == "" then return nil end
+            name = config_basename(name) or name
+            name = name:gsub("[/\\]", "")
+            if name == "" then return nil end
+            return library.directory .. "/configs/" .. name .. ".cfg"
+        end
+
+        local function resolve_config_name()
+            local text = flags["config_name_text"]
+            if type(text) == "string" then
+                text = text:match("^%s*(.-)%s*$")
+                if text ~= "" then return text end
+            end
+            local selected = flags["config_name_list"]
+            if type(selected) == "string" and selected ~= "" then
+                return selected
+            end
+            if type(selected) == "table" and type(selected[1]) == "string" then
+                return selected[1]
+            end
+            return nil
+        end
+
         function library:update_config_list() 
             if not config_holder then 
                 return 
             end
             
             local list = {}
-            
-            for idx, file in listfiles(library.directory .. "/configs") do
-                local name = file:gsub(library.directory .. "/configs\\", ""):gsub(".cfg", ""):gsub(library.directory .. "\\configs\\", "")
-                list[#list + 1] = name
+            local seen = {}
+            local ok, files = pcall(function()
+                if not listfiles then return {} end
+                return listfiles(library.directory .. "/configs")
+            end)
+            if ok and type(files) == "table" then
+                for _, file in pairs(files) do
+                    local name = config_basename(file)
+                    if name and not seen[name] then
+                        seen[name] = true
+                        list[#list + 1] = name
+                    end
+                end
             end
+            table.sort(list)
 
+            if config_holder.data_store then
+                for _, option in pairs(config_holder.data_store) do
+                    pcall(function() option:Destroy() end)
+                end
+                config_holder.data_store = {}
+            end
             config_holder.refresh_options(list)
         end 
 
@@ -514,6 +564,9 @@
             local Config = {}
             
             for _, v in next, flags do
+                if _ == "config_name_list" or _ == "config_name_text" then
+                    continue
+                end
                 if type(v) == "table" and v.key then
                     Config[_] = {active = v.active, mode = v.mode, key = tostring(v.key)}
                 elseif type(v) == "table" and v["Transparency"] and v["Color"] then
@@ -527,25 +580,32 @@
         end
 
         function library:load_config(config_json) 
-            local config = http_service:JSONDecode(config_json)
+            if type(config_json) ~= "string" or config_json == "" then
+                return false
+            end
+            local ok, config = pcall(http_service.JSONDecode, http_service, config_json)
+            if not ok or type(config) ~= "table" then
+                return false
+            end
             
-            for _, v in config do 
-                local function_set = library.config_flags[_]
-                
-                if _ == "config_name_list" then 
-                    continue 
+            for key, v in pairs(config) do 
+                if key == "config_name_list" or key == "config_name_text" then
+                    continue
                 end
-
+                local function_set = library.config_flags[key]
                 if function_set then 
-                    if type(v) == "table" and v["Transparency"] and v["Color"] then
-                        function_set(hex(v["Color"]), v["Transparency"])
-                    elseif type(v) == "table" and v["active"] then 
-                        function_set(v)
-                    else
-                        function_set(v)
-                    end
+                    pcall(function()
+                        if type(v) == "table" and v["Transparency"] and v["Color"] then
+                            function_set(hex(v["Color"]), v["Transparency"])
+                        elseif type(v) == "table" and v["active"] then 
+                            function_set(v)
+                        else
+                            function_set(v)
+                        end
+                    end)
                 end 
-            end 
+            end
+            return true
         end 
         
         function library:round(number, float) 
@@ -3759,9 +3819,73 @@
             local column = main:column({})
             local section = column:section({name = "Settings", side = "right", size = 1, default = true, icon = "rbxassetid://129380150574313"})
             section:textbox({name = "Config name:", flag = "config_name_text"})
-            section:button({name = "Save", callback = function() writefile(library.directory .. "/configs/" .. flags["config_name_text"] or flags["config_name_list"] .. ".cfg", library:get_config()) library:update_config_list() notifications:create_notification({name = "Configs", info = "Saved config to:\n" .. flags["config_name_list"] or flags["config_name_text"]}) end}) 
-            section:button({name = "Load", callback = function() library:load_config(readfile(library.directory .. "/configs/" .. flags["config_name_list"] .. ".cfg"))  library:update_config_list() notifications:create_notification({name = "Configs", info = "Loaded config:\n" .. flags["config_name_list"]}) end})
-            section:button({name = "Delete", callback = function() delfile(library.directory .. "/configs/" .. flags["config_name_list"] .. ".cfg")  library:update_config_list() notifications:create_notification({name = "Configs", info = "Deleted config:\n" .. flags["config_name_list"]}) end})
+            section:button({name = "Save", callback = function()
+                local name = resolve_config_name()
+                if not name then
+                    notifications:create_notification({name = "Configs", info = "Enter or select a config name first"})
+                    return
+                end
+                local path = config_path(name)
+                if not path then
+                    notifications:create_notification({name = "Configs", info = "Invalid config name"})
+                    return
+                end
+                if makefolder then pcall(makefolder, library.directory .. "/configs") end
+                local ok, err = pcall(writefile, path, library:get_config())
+                if not ok then
+                    notifications:create_notification({name = "Configs", info = "Save failed:\n" .. tostring(err)})
+                    return
+                end
+                library:update_config_list()
+                notifications:create_notification({name = "Configs", info = "Saved config:\n" .. name})
+            end})
+            section:button({name = "Load", callback = function()
+                local name = resolve_config_name()
+                if not name then
+                    notifications:create_notification({name = "Configs", info = "Select a config from the list first"})
+                    return
+                end
+                local path = config_path(name)
+                local legacy = library.directory .. "/configs/" .. name
+                if (not path or not isfile or not isfile(path)) and isfile and isfile(legacy) then
+                    path = legacy
+                end
+                if not path or not isfile or not isfile(path) then
+                    notifications:create_notification({name = "Configs", info = "Config not found:\n" .. tostring(name)})
+                    return
+                end
+                local ok, data = pcall(readfile, path)
+                if not ok or type(data) ~= "string" then
+                    notifications:create_notification({name = "Configs", info = "Could not read config:\n" .. tostring(name)})
+                    return
+                end
+                if library:load_config(data) then
+                    notifications:create_notification({name = "Configs", info = "Loaded config:\n" .. name})
+                else
+                    notifications:create_notification({name = "Configs", info = "Failed to parse config:\n" .. name})
+                end
+            end})
+            section:button({name = "Delete", callback = function()
+                local name = resolve_config_name()
+                if not name then
+                    notifications:create_notification({name = "Configs", info = "Select a config from the list first"})
+                    return
+                end
+                local path = config_path(name)
+                if not path then
+                    notifications:create_notification({name = "Configs", info = "Invalid config name"})
+                    return
+                end
+                if isfile and isfile(path) then
+                    local ok, err = pcall(delfile, path)
+                    if not ok then
+                        notifications:create_notification({name = "Configs", info = "Delete failed:\n" .. tostring(err)})
+                        return
+                    end
+                end
+                library:update_config_list()
+                notifications:create_notification({name = "Configs", info = "Deleted config:\n" .. name})
+            end}) end})
             section:colorpicker({name = "Menu Accent", callback = function(color, alpha) library:update_theme("accent", color) end, color = themes.preset.accent})
             section:keybind({name = "Menu Bind", callback = function(bool) window.toggle_menu(bool) end, default = true})
         end
