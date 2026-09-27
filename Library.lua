@@ -3885,7 +3885,7 @@
                 end
                 library:update_config_list()
                 notifications:create_notification({name = "Configs", info = "Deleted config:\n" .. name})
-            end}) end})
+            end})
             section:colorpicker({name = "Menu Accent", callback = function(color, alpha) library:update_theme("accent", color) end, color = themes.preset.accent})
             section:keybind({name = "Menu Bind", callback = function(bool) window.toggle_menu(bool) end, default = true})
         end
