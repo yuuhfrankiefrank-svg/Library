@@ -84,7 +84,7 @@
 
     local themes = {
         preset = {
-            accent = rgb(0, 150, 255),
+            accent = rgb(0, 150, 255, 1),
         }, 
 
         utility = {
